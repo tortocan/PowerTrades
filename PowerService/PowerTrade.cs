@@ -11,7 +11,7 @@
         private PowerTrade(DateTime date, PowerPeriod[] periods)
         {
             TradeId = Guid.NewGuid().ToString();
-            Date = date;
+            Date = date.ToUniversalTime();
             Periods = periods;
         }
 

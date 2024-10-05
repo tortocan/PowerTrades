@@ -18,14 +18,26 @@ namespace PowerService
         {
             _mode = Environment.GetEnvironmentVariable("SERVICE_MODE") ?? "Normal";
         }
-
+        /// <summary>
+        /// It reports the forecast of the total energy volume per hour required by Axpo for the next day.
+        /// </summary>
+        /// <param name="date">The argument date refers to the reference date of the trades thus, you will need to request the date of the following day if you want to get the power positions of the day-ahead</param>
+        /// <returns>An array of  <see cref="PowerTrade"/>`s.</returns>
         public IEnumerable<PowerTrade> GetTrades(DateTime date)
         {
-            CheckThrowError();
+            if (_mode == "Normal" | _mode == "Error")
+            {
+                CheckThrowError();
+            }
             Thread.Sleep(GetDelay());
             return GetTradesImpl(date);
         }
 
+        /// <summary>
+        /// It reports the forecast of the total energy volume per hour required by Axpo for the next day.
+        /// </summary>
+        /// <param name="date">The argument date refers to the reference date of the trades thus, you will need to request the date of the following day if you want to get the power positions of the day-ahead</param>
+        /// <returns>An array of  <see cref="PowerTrade"/>`s.</returns>
         public async Task<IEnumerable<PowerTrade>> GetTradesAsync(DateTime date)
         {
             CheckThrowError();
@@ -47,6 +59,7 @@ namespace PowerService
             return TimeSpan.FromSeconds(seconds);
         }
 
+    
         private IEnumerable<PowerTrade> GetTradesImpl(DateTime date)
         {
             DateTime localStartTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Unspecified).Date.AddHours(-1.0);

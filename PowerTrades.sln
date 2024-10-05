@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution", "Solution", "{75
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PowerService.Tests", "PowerService.Tests\PowerService.Tests.csproj", "{F8AADC9A-5D3F-4A98-ABBB-6CECF7ADFC35}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{F5488CC1-F949-489E-9336-BF1DEC799D66}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F5488CC1-F949-489E-9336-BF1DEC799D66}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F5488CC1-F949-489E-9336-BF1DEC799D66}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8AADC9A-5D3F-4A98-ABBB-6CECF7ADFC35}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8AADC9A-5D3F-4A98-ABBB-6CECF7ADFC35}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8AADC9A-5D3F-4A98-ABBB-6CECF7ADFC35}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8AADC9A-5D3F-4A98-ABBB-6CECF7ADFC35}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
