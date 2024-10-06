@@ -72,7 +72,7 @@
             DateTime utcEndTime = utcStartTime.AddDays(1.0);
             int numberOfPeriods = (int)utcEndTime.Subtract(utcStartTime).TotalHours;
             int numberOfTrades = ((_mode == PowerServiceMode.Test) ? 2 : _random.Next(1, 20));
-            var dateToUtc = date.Kind == DateTimeKind.Utc ? date : TimeZoneInfo.ConvertTime(date, timeZoneInfo).ToUniversalTime();
+            var dateToUtc = date.Kind == DateTimeKind.Utc ? date : TimeZoneInfo.ConvertTimeFromUtc(date, timeZoneInfo).ToUniversalTime();
             PowerTrade[] trades = (from _ in Enumerable.Range(0, numberOfTrades)
                                    select PowerTrade.Create(dateToUtc, numberOfPeriods)).ToArray();
             int period = 0;
