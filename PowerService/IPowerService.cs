@@ -1,15 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace PowerService
+﻿namespace PowerService
 {
     public interface IPowerService
     {
-        IEnumerable<PowerTrade> GetTrades(DateTime date);
+        IEnumerable<PowerTrade> GetTrades(DateTime date, TimeZoneInfo timeZoneInfo);
 
-        Task<IEnumerable<PowerTrade>> GetTradesAsync(DateTime date);
+        Task<IEnumerable<PowerTrade>> GetTradesAsync(DateTime date, TimeZoneInfo timeZoneInfo);
     }
 }
