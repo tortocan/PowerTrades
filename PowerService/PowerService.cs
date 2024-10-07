@@ -28,7 +28,7 @@
         /// <summary>
         /// It reports the forecast of the total energy volume per hour required by Axpo for the next day.
         /// </summary>
-        /// <param name="date">The argument date refers to the reference date of the trades thus, you will need to request the date of the following day if you want to get the power positions of the day-ahead</param>
+        /// <param name="date">The argument date refers to the reference UTC date of the trades thus, you will need to request the date of the following day if you want to get the power positions of the day-ahead</param>
         /// <returns>An array of  <see cref="PowerTrade"/>`s. with the UTC time <see cref="PowerTrade.Create(DateTime, int)"/></returns>
         public IEnumerable<PowerTrade> GetTrades(DateTime date, TimeZoneInfo timeZoneInfo)
         {
@@ -43,7 +43,7 @@
         /// <summary>
         /// It reports the forecast of the total energy volume per hour required by Axpo for the next day.
         /// </summary>
-        /// <param name="date">The argument date refers to the reference date of the trades thus, you will need to request the date of the following day if you want to get the power positions of the day-ahead</param>
+        /// <param name="date">The argument date refers to the reference UTC date of the trades thus, you will need to request the date of the following day if you want to get the power positions of the day-ahead</param>
         /// <returns>An array of  <see cref="PowerTrade"/>`s. with the UTC time <see cref="PowerTrade.Create(DateTime, int)"/></returns>
         public async Task<IEnumerable<PowerTrade>> GetTradesAsync(DateTime date, TimeZoneInfo timeZoneInfo)
         {
@@ -68,13 +68,24 @@
 
         private IEnumerable<PowerTrade> GetTradesImpl(DateTime date, TimeZoneInfo timeZoneInfo)
         {
+            if (timeZoneInfo.Id == TimeZone.CurrentTimeZone.StandardName)
+            {
+                date = date.ToUniversalTime();
+            }
+            else if (date.Kind == DateTimeKind.Unspecified)
+            {
+                date = TimeZoneInfo.ConvertTime(date, timeZoneInfo).ToUniversalTime();
+            }
+
             DateTime utcStartTime = new DateTime(date.Year, date.Month, date.Day, 0, 0, 0, DateTimeKind.Utc).Date.AddHours(-1.0); //DateTimeKind.Unspecified defaults to UTC
             DateTime utcEndTime = utcStartTime.AddDays(1.0);
             int numberOfPeriods = (int)utcEndTime.Subtract(utcStartTime).TotalHours;
             int numberOfTrades = ((_mode == PowerServiceMode.Test) ? 2 : _random.Next(1, 20));
-            var dateToUtc = date.Kind == DateTimeKind.Utc ? date : TimeZoneInfo.ConvertTimeFromUtc(date, timeZoneInfo).ToUniversalTime();
+
+            var dateToUtc = date.Kind != DateTimeKind.Utc ? date : TimeZoneInfo.ConvertTimeFromUtc(date, timeZoneInfo).ToUniversalTime();
+
             PowerTrade[] trades = (from _ in Enumerable.Range(0, numberOfTrades)
-                                   select PowerTrade.Create(dateToUtc, numberOfPeriods)).ToArray();
+                                   select PowerTrade.Create(date, numberOfPeriods)).ToArray();
             int period = 0;
             DateTime time = utcStartTime;
             while (time < utcEndTime)
