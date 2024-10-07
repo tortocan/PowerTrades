@@ -1,5 +1,7 @@
+using Bogus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PowerTrades.Builders;
 using System.Text.Json;
 
 namespace PowerTrades.Tests
@@ -105,6 +107,52 @@ namespace PowerTrades.Tests
 
             var result = new FileConventionBuilder(volumeDate, extractionDateUtc);
             Assert.AreEqual(expected, result.Build());
+        }
+
+        //It has two columns Datetime and Volume
+        [TestMethod]
+        public void Given_PowerTradeCsv_WhenBuild_Has2Columns()
+        {
+            var volumeDate = new DateOnly(2023, 10, 10);
+            var extractionDate = new DateTime(2023, 10, 10, 0, 0, 0, DateTimeKind.Utc);
+            var records = new Faker<PowerTradeCsvModel>()
+                .StrictMode(true)
+                .RuleFor(x => x.Volume, x => x.Random.Float(-20, 150))
+                .RuleFor(x => x.VolumeDate, x => x.Date.FutureOffset(1).DateTime)
+                .Generate(24);
+            var fileConvention = new FileConventionBuilder(volumeDate, extractionDate);
+            var result = new PowerTradeCsvBuilder(records)
+                .WithFilename(fileConvention)
+                .Build();
+            Assert.AreEqual(2, result.HeaderRecord?.Length);
+            Assert.AreEqual("Datetime", result.HeaderRecord?.First());
+            Assert.AreEqual("Volume", result.HeaderRecord?.Last());
+        }
+
+
+        //Semicolon is the separator
+        //The first row is the header.
+        //The point is the decimal separator.
+        //The Datetime format should follow ISO_8601
+        [TestMethod]
+        public void Given_PowerTradeCsv_WhenBuild_CheckFormat()
+        {
+            var volumeDate = new DateOnly(2023, 10, 10);
+            var extractionDate = new DateTime(2023, 10, 10, 0, 0, 0, DateTimeKind.Utc);
+            var fileConvention = new FileConventionBuilder(volumeDate, extractionDate);
+            var path = fileConvention.Build();
+            if (!File.Exists(path))
+            {
+                Given_PowerTradeCsv_WhenBuild_Has2Columns();
+            }
+            var result = File.ReadAllLines(path);
+            var firstRow = result[1];
+            var rowParts = firstRow.Split(',');
+            var date = rowParts[0];
+            var volume = rowParts[1];
+            Assert.AreEqual("Datetime,Volume", result.First());
+            Assert.IsTrue(date.EndsWith("Z"));
+            Assert.IsTrue(volume.Contains('.') && !volume.Contains(','));
         }
     }
 }
