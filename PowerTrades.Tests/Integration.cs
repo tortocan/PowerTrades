@@ -154,5 +154,40 @@ namespace PowerTrades.Tests
             Assert.IsTrue(date.EndsWith("Z"));
             Assert.IsTrue(volume.Contains('.') && !volume.Contains(','));
         }
+
+        //The actual interval X is passed on the command line 
+        [TestMethod]
+        public void Given_App_WithIOption_Accepts_IntervalArg()
+        {
+            var expected = TimeSpan.FromMinutes(1).ToString();
+            var args = new string[] { "-d", AppDomain.CurrentDomain.BaseDirectory, "-i", expected };
+            var sut = TestHelper.GetRequiredService<Application>();
+
+            var result = TestHelper.CapturedStdOut(async () =>
+            {
+                var result = await sut.ExecuteAsync(args);
+                Assert.IsNotNull(result);
+                Assert.IsTrue(result == 0);
+            });
+            Assert.IsTrue(result.Contains(expected), $"Expected contains {expected} but got {result}");
+        }
+
+        //The actual interval X configured in the configuration file
+        [TestMethod]
+        public void Given_App_WithInterval_Accepts_IntervalArg()
+        {
+            var expected = JsonSerializer.Deserialize<TestHelper.PowerTradesConfig>(File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}appsettings.Testing.json")).Value.ExtractInterval.ToString();
+            var args = new string[] { "-d", AppDomain.CurrentDomain.BaseDirectory, "-i", expected };
+            var sut = TestHelper.GetRequiredService<Application>();
+
+            var result = TestHelper.CapturedStdOut(async () =>
+            {
+                var result = await sut.ExecuteAsync(args);
+                Assert.IsNotNull(result);
+                Assert.IsTrue(result == 0);
+            });
+            Assert.AreEqual("00:01:00", expected);
+            Assert.IsTrue(result.Contains(expected), $"Expected contains {expected} but got {result}");
+        }
     }
 }

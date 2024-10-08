@@ -13,7 +13,7 @@ namespace PowerService.Tests
         /// </para>
         /// </summary>
         [TestMethod]
-        public void Given_TwoSimilar_Timezones_When_ToFunctionCalled_CanFailIfNotHandledPropely()
+        public void Given_TwoSimilar_Timezones_When_ToFunctionsAreCalled_CanFailIfNotHandledPropely()
         {
             var utcTime = new DateTime(2024, 10, 6, 0, 0, 0, DateTimeKind.Utc);
             TimeZoneInfo.TryConvertIanaIdToWindowsId("Europe/Bucharest", out string? bucharestTimezoneId);
@@ -29,41 +29,41 @@ namespace PowerService.Tests
             var localDate = TimeZoneInfo.ConvertTimeFromUtc(utcTime, madridTz);
 
             var istabulDate = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istabulTz);
-            var bucharestlDate = TimeZoneInfo.ConvertTimeFromUtc(utcTime, bucharestTz);
+            var bucharestDate = TimeZoneInfo.ConvertTimeFromUtc(utcTime, bucharestTz);
 
             Assert.AreEqual(utcTime, utcTime.ToUniversalTime());
             Assert.AreEqual(utcTime, localDate.ToUniversalTime());//This will asume the system TZ
 
             Assert.AreNotEqual(localDate, istabulDate);
-            Assert.AreNotEqual(localDate, bucharestlDate);
+            Assert.AreNotEqual(localDate, bucharestDate);
 
             Assert.AreEqual(TimeSpan.FromHours(1), (istabulDate - localDate));
-            Assert.AreEqual(TimeSpan.FromHours(1), (bucharestlDate - localDate));
-            Assert.AreEqual(bucharestlDate, istabulDate);
+            Assert.AreEqual(TimeSpan.FromHours(1), (bucharestDate - localDate));
+            Assert.AreEqual(bucharestDate, istabulDate);
 
             Assert.IsTrue(localDate.IsDaylightSavingTime());
             Assert.IsTrue(istabulDate.IsDaylightSavingTime());
-            Assert.IsTrue(bucharestlDate.IsDaylightSavingTime());
+            Assert.IsTrue(bucharestDate.IsDaylightSavingTime());
 
 
-            Assert.AreNotEqual(localDate, bucharestlDate.ToLocalTime());//This "should" be equal
-            Assert.AreNotEqual(utcTime, bucharestlDate.ToUniversalTime());//This "should" be equal
+            Assert.AreNotEqual(localDate, bucharestDate.ToLocalTime());//This "should" be equal
+            Assert.AreNotEqual(utcTime, bucharestDate.ToUniversalTime());//This "should" be equal
             Assert.AreNotEqual(localDate, istabulDate.ToLocalTime());//This "should" be equal
             Assert.AreNotEqual(utcTime, istabulDate.ToUniversalTime());//This "should" be equal
             Assert.AreNotEqual(localDate.ToUniversalTime(), istabulDate.ToUniversalTime());//This "should" be equal
             Assert.AreNotEqual(TimeZoneInfo.ConvertTime(localDate, utcTz), TimeZoneInfo.ConvertTime(istabulDate, utcTz));//This "should be equal
-            Assert.AreNotEqual(bucharestlDate, TimeZoneInfo.ConvertTime(istabulDate, istabulTz));//This "should be equal
+            Assert.AreNotEqual(bucharestDate, TimeZoneInfo.ConvertTime(istabulDate, istabulTz));//This "should be equal
 
 
-            Assert.AreEqual(localDate, TimeZoneInfo.ConvertTimeToUtc(bucharestlDate, bucharestTz).ToLocalTime());//Correct
-            Assert.AreEqual(utcTime, TimeZoneInfo.ConvertTimeToUtc(bucharestlDate, bucharestTz));//Correct
+            Assert.AreEqual(localDate, TimeZoneInfo.ConvertTimeToUtc(bucharestDate, bucharestTz).ToLocalTime());//Correct
+            Assert.AreEqual(utcTime, TimeZoneInfo.ConvertTimeToUtc(bucharestDate, bucharestTz));//Correct
 
             Assert.AreEqual(localDate, TimeZoneInfo.ConvertTimeToUtc(istabulDate, istabulTz).ToLocalTime());//Correct
             Assert.AreEqual(utcTime, TimeZoneInfo.ConvertTimeToUtc(istabulDate, istabulTz));//Correct
 
 
-            Assert.AreEqual(TimeZoneInfo.ConvertTime(bucharestlDate, bucharestTz), TimeZoneInfo.ConvertTime(istabulDate, istabulTz));//Correct
-            Assert.AreEqual(TimeZoneInfo.ConvertTime(bucharestlDate, bucharestTz).ToUniversalTime(), TimeZoneInfo.ConvertTime(istabulDate, istabulTz).ToUniversalTime());//Correct
+            Assert.AreEqual(TimeZoneInfo.ConvertTime(bucharestDate, bucharestTz), TimeZoneInfo.ConvertTime(istabulDate, istabulTz));//Correct
+            Assert.AreEqual(TimeZoneInfo.ConvertTime(bucharestDate, bucharestTz).ToUniversalTime(), TimeZoneInfo.ConvertTime(istabulDate, istabulTz).ToUniversalTime());//Correct
         }
 
 
@@ -83,7 +83,7 @@ namespace PowerService.Tests
             foreach (var trade in result)
             {
                 Assert.IsNotNull(trade.Periods, "Trade has no pedriods");
-                Assert.IsTrue(trade.Periods.Length == dayHours, $"The report should generate an hourly aggregated volume current periods {trade.Periods.Length}");
+                Assert.IsTrue(trade.Periods.Length == dayHours, $"The report should generate an hourly volume current periods {trade.Periods.Length}");
                 Assert.AreEqual(nextDay.ToUniversalTime(), trade.Date, "The report should be for the next day");
             }
         }
@@ -114,7 +114,7 @@ namespace PowerService.Tests
             foreach (var trade in result)
             {
                 Assert.IsNotNull(trade.Periods, "Trade has no pedriods");
-                Assert.IsTrue(trade.Periods.Length == dayHours, $"The report should generate an hourly aggregated volume current periods {trade.Periods.Length}");
+                Assert.IsTrue(trade.Periods.Length == dayHours, $"The report should generate an hourly volume current periods {trade.Periods.Length}");
                 Assert.AreEqual(TimeZoneInfo.ConvertTime(nextDay, istabulTz).ToUniversalTime(), trade.Date, "The report should be for the next day");
             }
         }
@@ -144,7 +144,7 @@ namespace PowerService.Tests
             foreach (var trade in result)
             {
                 Assert.IsNotNull(trade.Periods, "Trade has no pedriods");
-                Assert.IsTrue(trade.Periods.Length == dayHours, $"The report should generate an hourly aggregated volume current periods {trade.Periods.Length}");
+                Assert.IsTrue(trade.Periods.Length == dayHours, $"The report should generate an hourly volume current periods {trade.Periods.Length}");
                 Assert.AreEqual(nextDay, trade.Date, "The report should be for the next day");
             }
         }
