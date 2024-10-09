@@ -3,25 +3,24 @@
     public class FileConventionBuilder
     {
         private DateOnly volumeDate;
-        private DateTime extractionDateUtc;
 
-        public FileConventionBuilder(DateOnly volumeDate, DateTime extractionDateUtc)
+        public FileConventionBuilder(DateOnly volumeDate)
         {
             ArgumentOutOfRangeException.ThrowIfEqual(volumeDate, DateOnly.MinValue);
             ArgumentNullException.ThrowIfNull(volumeDate, nameof(volumeDate));
-            ArgumentOutOfRangeException.ThrowIfEqual(extractionDateUtc, DateTime.MinValue);
-            ArgumentNullException.ThrowIfNull(extractionDateUtc, nameof(extractionDateUtc));
 
-            extractionDateUtc = TimeZoneInfo.ConvertTimeFromUtc(extractionDateUtc, TimeZoneInfo.Utc);
             VolumeDate = volumeDate;
-            ExtractionDateUtc = extractionDateUtc;
         }
 
-        public DateTime ExtractionDateUtc { get => extractionDateUtc; private set => extractionDateUtc = value; }
+        public DateTime ExtractionDateUtc { get; internal set; }
         public DateOnly VolumeDate { get => volumeDate; private set => volumeDate = value; }
 
         public string Build()
         {
+            if (ExtractionDateUtc == DateTime.MinValue)
+            {
+                ExtractionDateUtc = DateTime.UtcNow;
+            }
             return $"PowerPosition_{volumeDate:yyyyMMdd}_{ExtractionDateUtc:yyyyMMddHHmm}.csv";
         }
     }

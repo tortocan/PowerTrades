@@ -2,6 +2,7 @@ using Bogus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PowerTrades.Builders;
+using PowerTrades.Reports;
 using System.Text.Json;
 
 namespace PowerTrades.Tests
@@ -81,21 +82,10 @@ namespace PowerTrades.Tests
             var volumeDate = new DateOnly(2014, 12, 20);
             var expected = $"PowerPosition_20141220_201412201837.csv";
 
-            var result = new FileConventionBuilder(volumeDate, extractionDateUtc);
+            var result = new FileConventionBuilder(volumeDate) { ExtractionDateUtc = extractionDateUtc };
             Assert.AreEqual(expected, result.Build());
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(ArgumentException))]
-        public async Task Given_FileConvention_WithInvalidUTCDate_Fails()
-        {
-            var extractionDateUtc = new DateTime(2014, 12, 20, 18, 37, 0, DateTimeKind.Local);
-            var volumeDate = new DateOnly(2014, 12, 20);
-            var expected = $"PowerPosition_20141220_201412201837.csv";
-
-            var result = new FileConventionBuilder(volumeDate, extractionDateUtc);
-            Assert.AreEqual(expected, result.Build());
-        }
 
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
@@ -105,7 +95,7 @@ namespace PowerTrades.Tests
             var volumeDate = DateOnly.MinValue;
             var expected = $"PowerPosition_20141220_201412201837.csv";
 
-            var result = new FileConventionBuilder(volumeDate, extractionDateUtc);
+            var result = new FileConventionBuilder(volumeDate) { ExtractionDateUtc = extractionDateUtc };
             Assert.AreEqual(expected, result.Build());
         }
 
@@ -120,10 +110,10 @@ namespace PowerTrades.Tests
                 .RuleFor(x => x.Volume, x => x.Random.Float(-20, 150))
                 .RuleFor(x => x.VolumeDate, x => x.Date.FutureOffset(1).DateTime)
                 .Generate(24);
-            var fileConvention = new FileConventionBuilder(volumeDate, extractionDate);
-            var result = new PowerTradeCsvBuilder(records)
+            var fileConvention = new FileConventionBuilder(volumeDate) { ExtractionDateUtc = extractionDate };
+            var result = TestHelper.GetRequiredService<PowerTradeCsvBuilder>()
                 .WithFilename(fileConvention)
-                .Build();
+                .Build(records);
             Assert.AreEqual(2, result.HeaderRecord?.Length);
             Assert.AreEqual("Datetime", result.HeaderRecord?.First());
             Assert.AreEqual("Volume", result.HeaderRecord?.Last());
@@ -139,7 +129,7 @@ namespace PowerTrades.Tests
         {
             var volumeDate = new DateOnly(2023, 10, 10);
             var extractionDate = new DateTime(2023, 10, 10, 0, 0, 0, DateTimeKind.Utc);
-            var fileConvention = new FileConventionBuilder(volumeDate, extractionDate);
+            var fileConvention = new FileConventionBuilder(volumeDate) { ExtractionDateUtc = extractionDate };
             var path = fileConvention.Build();
             if (!File.Exists(path))
             {
@@ -188,6 +178,48 @@ namespace PowerTrades.Tests
             });
             Assert.AreEqual("00:01:00", expected);
             Assert.IsTrue(result.Contains(expected), $"Expected contains {expected} but got {result}");
+        }
+
+
+        //All trade positions shall be aggregated per hour (local/wall clock time)
+        [TestMethod]
+        public void Given_ForecastPowerReport_WhenGenerate_Returns_AggregatedVolumes()
+        {
+            var tz = TimeZoneInfo.Local;
+            var nextDay = new DateTime(2023, 07, 01, 0, 0, 0, DateTimeKind.Local)
+                .AddSeconds(new Random().NextInt64(1, 30))
+                .AddMilliseconds(new Random().NextInt64(500, 10000));
+            var sut = TestHelper.GetRequiredService<ForecastPowerReport>().Generate(nextDay, tz);
+            Assert.IsNotNull(sut.Records, "The forecast results is null");
+            Assert.IsTrue(sut.Records.Any(), "The forecast has no results.");
+            Assert.AreEqual(24, sut.Records.Count, "The result is not aggregated.");
+            Assert.AreEqual(nextDay, sut.Records.First().VolumeDate);
+            Assert.AreNotEqual(nextDay, sut.Records.Last().VolumeDate);
+
+            for (var i = 0; i < sut.Records.Count - 1;)
+            {
+                var curElement = sut.Records.ElementAt(i);
+                i++;
+                var nextElement = sut.Records.ElementAt(i);
+                var actual = nextElement.VolumeDate - curElement.VolumeDate;
+                Assert.AreEqual(TimeSpan.FromHours(1), actual);
+            }
+        }
+
+        [TestMethod]
+        public async Task Given_App_WhenExecute_Generates_CSV()
+        {
+            var tz = TimeZoneInfo.Local;
+            var now = DateTime.Now;
+            var extractDate = DateTime.UtcNow;
+            var isoDate = extractDate.ToUniversalTime().ToString("o");
+            var args = new string[] { "-d" , AppDomain.CurrentDomain.BaseDirectory, "-e", isoDate, "-t" , "Europe/Bucharest" };
+            var sut = await TestHelper.GetRequiredService<Application>().ExecuteAsync(args);
+            var fileName = new FileConventionBuilder(new DateOnly(now.Year,now.Month,now.Day + 1)) { ExtractionDateUtc = extractDate };
+            var result = File.ReadAllLines(fileName.Build());
+            Assert.AreEqual(0, sut);
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(result.ElementAt(24));
         }
     }
 }

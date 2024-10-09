@@ -30,26 +30,34 @@ namespace PowerTrades
 
             try
             {
+
+                logger.LogInformation($"Recevied arguments: {string.Join(" ", args)}");
                 Cli.Ext.ConfigureServices(services =>
                 {
-                    services.AddLogging();
+                    services.AddLogging(logging => logging.AddSimpleConsole(options =>
+                    {
+                        options.IncludeScopes = true;
+                        options.SingleLine = true;
+                        options.UseUtcTimestamp = true;
+                        options.TimestampFormat = "MM/dd HH:mm:ss ";
+                    }));
+                    Program.AddForecastServices(services);
                 });
 
                 var settings = new CliSettings()
                 {
                     EnableEnvironmentVariablesDirective = true
                 };
-
                 if (!string.IsNullOrWhiteSpace(options.Value.WorkingDirectory))
                 {
 
                     var cmd = Cli.Parse<RootCliCommand>(args, settings);
-                    if (cmd.Tokens?.Any(x => x.Value == RootCliCommand.DirOptionName) == false)
+                    if (cmd.Tokens?.Any(x => x.Value == RootCliCommand.WorkingDirOptionName) == false)
                     {
-                        args = [RootCliCommand.DirOptionName, options.Value.WorkingDirectory];
+                        args = [RootCliCommand.WorkingDirOptionName, options.Value.WorkingDirectory];
                     }
                 }
-
+                logger.LogInformation($"options.Value.WorkingDirectory: {options.Value.WorkingDirectory}");
                 var result = await Cli.RunAsync<RootCliCommand>(args, settings);
                 return result;
             }
