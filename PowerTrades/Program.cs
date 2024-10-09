@@ -37,42 +37,68 @@ namespace PowerTrades
             {
                 // The "Application" service is the application
                 // itself. Add all other dependencies hereafter
-              
+
                 AddForecastServices(services);
                 services.AddSingleton<Application>();
-
             })
             .ConfigureLogging((hostingContext, logging) =>
-              // Add more logging if needed
-              logging.AddSimpleConsole(options =>
-              {
-                  options.IncludeScopes = true;
-                  options.SingleLine = true;
-                  options.UseUtcTimestamp = true;
-                  options.TimestampFormat = "MM/dd HH:mm:ss ";
-              })
+                // Add more logging if needed
+                BuildLogger(logging)
             );
 
             return builder;
+        }
 
+        private static ILoggingBuilder BuildLogger(ILoggingBuilder logging)
+        {
+            return logging.AddSimpleConsole(options =>
+            {
+                options.IncludeScopes = true;
+                options.SingleLine = true;
+                options.UseUtcTimestamp = true;
+                options.TimestampFormat = "MM/dd HH:mm:ss ";
+            });
         }
 
         internal static void AddForecastServices(IServiceCollection services)
         {
-            services.AddSingleton<IConfiguration>(Program.configuration);
+            services.AddSingleton(configuration);
             services.AddOptions();
             services.AddOptions<PowerTradesOptions>().BindConfiguration(PowerTradesOptions.Name);
             services.AddTransient<PowerTradeCsvBuilder>();
             services.AddTransient<IPowerService, PowerService.PowerService>();
             services.AddTransient<ForecastPowerReport>();
+            services.AddSingleton<TimedHostedService>();
         }
 
         // Run the application
 
-        internal static async Task<int> Main(string[] args)
+        internal static int Main(string[] args)
         {
+            using var loggerFactory = LoggerFactory.Create(x => BuildLogger(x));
+            var logger = loggerFactory.CreateLogger(nameof(Program));
+
             var application = CreateDefaultBuilder(args).Build().Services.GetRequiredService<Application>();
-            return await application.ExecuteAsync(args);
+            using var cancellationTokenSource = new CancellationTokenSource();
+            Console.CancelKeyPress += (s, e) =>
+            {
+                logger.LogCritical("Canceling...");
+                cancellationTokenSource.Cancel();
+                e.Cancel = true;
+            };
+
+            var result = 0;
+            var results = application.ExecuteAsService(args, cancellationTokenSource.Token);
+            foreach (var item in results)
+            {
+                logger.LogWarning($"Yield results {results.Count()}");
+                if (result == 0)
+                {
+                    result = item;
+                }
+            }
+
+            return result;
         }
     }
 }

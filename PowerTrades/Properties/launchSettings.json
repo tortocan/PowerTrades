@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "PowerTrades": {
+      "commandName": "Project",
+      "commandLineArgs": "-d ./ -i 00:00:15"
+    }
+  }
+}

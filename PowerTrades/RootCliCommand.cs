@@ -44,7 +44,7 @@ namespace PowerTrades
 
         internal const string ExtractDateTimeZoneInfoOptionName = "-t";
 
-        [CliOption(Description = "The extract date IANA time zone info format for ex: Europe/Madrid, Defaults to Local Time Zone", Name = ExtractDateTimeZoneInfoOptionName, Aliases = new string[] { "--extract-date-tz" })]
+        [CliOption(Description = "The extract date IANA time zone info format for ex: Europe/Madrid, Defaults to Local Time Zone", Name = ExtractDateTimeZoneInfoOptionName,Required =false, Aliases = new string[] { "--extract-date-tz" })]
         public string TimeZoneId { get; set; }
 
         public void Run(CliContext context)

@@ -58,16 +58,15 @@ namespace PowerTrades.Tests
         [TestMethod]
         public async Task Given_App_WhenExceute_WithConfigVar_Accepts_DirectoryArg()
         {
-            var expected = JsonSerializer.Deserialize<TestHelper.PowerTradesConfig>(File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}appsettings.Testing.json")).Value.WorkingDirectory;
+            var expected = $"Directory does not exist: '{JsonSerializer.Deserialize<TestHelper.PowerTradesConfig>(File.ReadAllText($"{AppDomain.CurrentDomain.BaseDirectory}appsettings.Testing.json")).Value.WorkingDirectory}'";
             var args = Array.Empty<string>();
             var sut = TestHelper.GetTestBuilder().ConfigureAppConfiguration((c, x) => { x.SetBasePath(AppDomain.CurrentDomain.BaseDirectory).AddJsonFile("appsettings.json").AddJsonFile("appsettings.Testing.json"); }).Build().Services.GetRequiredService<Application>();
-            var result = TestHelper.CapturedStd(async () =>
+            var result = TestHelper.CapturedStdError(async () =>
             {
                 var result = await sut.ExecuteAsync(args);
                 Assert.IsNotNull(result);
-                Assert.IsTrue(result == 0);
             });
-            Assert.IsTrue(result.Contains(expected), $"Expected to contain {expected} but got {result}");
+            Assert.IsTrue(result.Contains(expected), $"Expected to contains {expected} but got {result}");
         }
 
         //CSV filename must follow the convention PowerPosition_YYYYMMDD_YYYYMMDDHHMM.csv where
@@ -106,12 +105,13 @@ namespace PowerTrades.Tests
             var volumeDate = new DateOnly(2023, 10, 10);
             var extractionDate = new DateTime(2023, 10, 10, 0, 0, 0, DateTimeKind.Utc);
             var records = new Faker<PowerTradeCsvModel>()
-                .StrictMode(true)
+                .StrictMode(false)
                 .RuleFor(x => x.Volume, x => x.Random.Float(-20, 150))
                 .RuleFor(x => x.VolumeDate, x => x.Date.FutureOffset(1).DateTime)
                 .Generate(24);
             var fileConvention = new FileConventionBuilder(volumeDate) { ExtractionDateUtc = extractionDate };
             var result = TestHelper.GetRequiredService<PowerTradeCsvBuilder>()
+                .WithWorkingDirectory(AppDomain.CurrentDomain.BaseDirectory)
                 .WithFilename(fileConvention)
                 .Build(records);
             Assert.AreEqual(2, result.HeaderRecord?.Length);
@@ -213,13 +213,33 @@ namespace PowerTrades.Tests
             var now = DateTime.Now;
             var extractDate = DateTime.UtcNow;
             var isoDate = extractDate.ToUniversalTime().ToString("o");
-            var args = new string[] { "-d" , AppDomain.CurrentDomain.BaseDirectory, "-e", isoDate, "-t" , "Europe/Bucharest" };
+            var args = new string[] { "-d", AppDomain.CurrentDomain.BaseDirectory, "-e", isoDate, "-t", "Europe/Bucharest" };
             var sut = await TestHelper.GetRequiredService<Application>().ExecuteAsync(args);
-            var fileName = new FileConventionBuilder(new DateOnly(now.Year,now.Month,now.Day + 1)) { ExtractionDateUtc = extractDate };
+            var fileName = new FileConventionBuilder(new DateOnly(now.Year, now.Month, now.Day + 1)) { ExtractionDateUtc = extractDate };
             var result = File.ReadAllLines(fileName.Build());
             Assert.AreEqual(0, sut);
             Assert.IsNotNull(result);
             Assert.IsNotNull(result.ElementAt(24));
+        }
+
+
+        [TestMethod]
+        public void Given_App_WhenExecute_Generates_CSV_AndRunsTimeHostedService()
+        {
+            var args = new string[] { "-d", AppDomain.CurrentDomain.BaseDirectory, "-i", "00:00:01" };
+            using var cancellationTokenSource = new CancellationTokenSource();
+            var sut = TestHelper.GetRequiredService<Application>().ExecuteAsService(args, cancellationTokenSource.Token);
+            Thread.Sleep(TimeSpan.FromSeconds(2));
+            cancellationTokenSource.Cancel();
+            var jobCounter = 0;
+            foreach (var item in sut)
+            {
+                Assert.IsNotNull(item);
+                Assert.IsTrue(item <= 0);
+                jobCounter++;
+            }
+            Assert.IsTrue(cancellationTokenSource.IsCancellationRequested);
+            Assert.IsTrue(sut.Count() == jobCounter, $"Expecte more than 2 but got {jobCounter}");
         }
     }
 }

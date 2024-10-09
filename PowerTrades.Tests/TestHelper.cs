@@ -21,6 +21,7 @@ namespace PowerTrades.Tests
         public static IHostBuilder GetTestBuilder()
         {
             var env = "Testing";
+            Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", env);
             return Program.CreateDefaultBuilder().UseEnvironment(env);
         }
         public static IHost GetTestHost()
