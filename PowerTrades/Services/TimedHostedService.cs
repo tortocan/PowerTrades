@@ -47,7 +47,13 @@ namespace PowerTrades
 
         private async void DoWork(object? state)
         {
+            
             var count = Interlocked.Increment(ref executionCount);
+
+            if (count == int.MaxValue) {
+                logger.LogInformation("Job count has reached maximum value setting it back to 0");
+                executionCount = 0;
+            }
 
             using var loggerScope = logger.BeginScope($"Job {count}");
             logger.LogInformation($"Timed Hosted Service is working on job. Count: {count}");

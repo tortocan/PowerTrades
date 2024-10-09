@@ -1,7 +1,6 @@
 ﻿using DotMake.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Diagnostics;
@@ -35,12 +34,12 @@ namespace PowerTrades
             };
         }
 
-        public async Task<int> ExecuteAsync(string[] args,CancellationToken cancellationToken = default)
+        public async Task<int> ExecuteAsync(string[] args, CancellationToken cancellationToken = default)
         {
             var result = 1;
             try
             {
-                using var scope =  logger.BeginScope(hostingEnvironment.EnvironmentName);
+                using var scope = logger.BeginScope(hostingEnvironment.EnvironmentName);
                 logger.LogInformation($"Recevied arguments: {string.Join(" ", args)}");
                 Cli.Ext.ConfigureServices(services =>
                 {
@@ -80,13 +79,13 @@ namespace PowerTrades
         {
             yield return ExecuteAsync(args, cancellationToken).GetAwaiter().GetResult();
             var serviceTask = async () => await timedHostedService.WithInterval(options.Value.ExtractInterval)
-                  .WithJob(async () => await ExecuteAsync(args,cancellationToken))
+                  .WithJob(async () => await ExecuteAsync(args, cancellationToken))
                  .StartAsync(cancellationToken);
             serviceTask();
-            var sw  =Stopwatch.StartNew();
+            var sw = Stopwatch.StartNew();
             while (!cancellationToken.IsCancellationRequested)
             {
-                Thread.Sleep(options.Value.ExtractInterval / 2 );
+                Thread.Sleep(options.Value.ExtractInterval / 2);
                 yield return 0;
             }
             yield return -1;

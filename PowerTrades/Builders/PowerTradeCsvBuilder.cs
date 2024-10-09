@@ -1,7 +1,6 @@
 ﻿using CsvHelper;
 using CsvHelper.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using System.Globalization;
 using System.Linq.Expressions;
 
@@ -40,7 +39,8 @@ namespace PowerTrades.Builders
             }
         }
 
-        public PowerTradeCsvBuilder WithWorkingDirectory(string workingDirectory) {
+        public PowerTradeCsvBuilder WithWorkingDirectory(string workingDirectory)
+        {
             this.workingDirectory = workingDirectory;
             return this;
         }
@@ -69,8 +69,7 @@ namespace PowerTrades.Builders
             }
             catch (Exception ex)
             {
-                logger.LogError(ex,ex.Message);
-
+                logger.LogError(ex, ex.Message);
                 throw;
             }
             finally
@@ -78,7 +77,7 @@ namespace PowerTrades.Builders
                 logger.LogInformation($"Finish building CSV file");
 
             }
-            
+
         }
 
         public PowerTradeCsvBuilder WithFilename(FileConventionBuilder fileConvention)

@@ -44,7 +44,7 @@ namespace PowerTrades
 
         internal const string ExtractDateTimeZoneInfoOptionName = "-t";
 
-        [CliOption(Description = "The extract date IANA time zone info format for ex: Europe/Madrid, Defaults to Local Time Zone", Name = ExtractDateTimeZoneInfoOptionName,Required =false, Aliases = new string[] { "--extract-date-tz" })]
+        [CliOption(Description = "The extract date IANA time zone info format for ex: Europe/Madrid, Defaults to Local Time Zone", Name = ExtractDateTimeZoneInfoOptionName, Required = false, Aliases = new string[] { "--extract-date-tz" })]
         public string TimeZoneId { get; set; }
 
         public void Run(CliContext context)
@@ -55,15 +55,27 @@ namespace PowerTrades
                 Console.WriteLine($@"Value for {nameof(WorkingDirectory)} property is '{WorkingDirectory}'");
                 Console.WriteLine($@"Value for {nameof(Interval)} property is '{Interval}'");
                 FileConventionBuilder? fileConventionBuilder = null;
-                var runDay = DateTime.Now;
-                var nextDay = runDay.AddDays(1);
+                var tz = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
+                var utcDate = DateTime.UtcNow;
+                var runDay = TimeZoneInfo.ConvertTimeFromUtc(utcDate, tz);
+                var nextDay = TimeZoneInfo.ConvertTimeFromUtc(utcDate.AddDays(1), tz);
+
+                if (tz.SupportsDaylightSavingTime && tz.IsAmbiguousTime(runDay))
+                {
+                    throw new ApplicationException("Ambiguous Time run day!");
+                }
+
+                if (tz.SupportsDaylightSavingTime && tz.IsAmbiguousTime(nextDay))
+                {
+                    throw new ApplicationException("Ambiguous Time next day!");
+                }
+
                 if (ExtractDateUtc != DateTime.MinValue)
                 {
                     Console.WriteLine($@"Value for {nameof(ExtractDateUtc)} property is '{ExtractDateUtc.ToString("o")}'");
                     fileConventionBuilder = new FileConventionBuilder(new DateOnly(nextDay.Year, nextDay.Month, nextDay.Day)) { ExtractionDateUtc = ExtractDateUtc };
                 }
                 Console.WriteLine();
-                var tz = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneId);
 
                 logger.LogInformation($"Start generating report now {runDay} for next day {nextDay} with timezone {tz.DisplayName}");
                 forecastPowerReport

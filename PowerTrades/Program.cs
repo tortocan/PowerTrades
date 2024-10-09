@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Polly;
 using PowerService;
 using PowerTrades.Builders;
 using PowerTrades.Reports;
@@ -77,28 +78,44 @@ namespace PowerTrades
         {
             using var loggerFactory = LoggerFactory.Create(x => BuildLogger(x));
             var logger = loggerFactory.CreateLogger(nameof(Program));
-
-            var application = CreateDefaultBuilder(args).Build().Services.GetRequiredService<Application>();
-            using var cancellationTokenSource = new CancellationTokenSource();
-            Console.CancelKeyPress += (s, e) =>
+            try
             {
-                logger.LogCritical("Canceling...");
-                cancellationTokenSource.Cancel();
-                e.Cancel = true;
-            };
+                Policy.Handle<Exception>()
+                 .Retry(1, (e, i) =>
+                 {
+                     logger.LogError(e, $"Retry ({i}) An exception has occured: {e.Message}");
+                 }).Execute(() =>
+                 {
+                     var application = CreateDefaultBuilder(args).Build().Services.GetRequiredService<Application>();
+                     using var cancellationTokenSource = new CancellationTokenSource();
+                     Console.CancelKeyPress += (s, e) =>
+                     {
+                         logger.LogCritical("Canceling...");
+                         cancellationTokenSource.Cancel();
+                         e.Cancel = true;
+                     };
 
-            var result = 0;
-            var results = application.ExecuteAsService(args, cancellationTokenSource.Token);
-            foreach (var item in results)
+                     var result = 0;
+                     var results = application.ExecuteAsService(args, cancellationTokenSource.Token);
+                     foreach (var item in results)
+                     {
+                         logger.LogWarning($"Yield results {results.Count()}");
+                         if (result == 0)
+                         {
+                             result = item;
+                         }
+                     }
+
+                     return result;
+                 });
+            }
+            catch (Exception ex)
             {
-                logger.LogWarning($"Yield results {results.Count()}");
-                if (result == 0)
-                {
-                    result = item;
-                }
+                logger.LogCritical(ex, ex.Message);
+                throw;
             }
 
-            return result;
+            return 1;
         }
     }
 }
