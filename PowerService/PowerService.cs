@@ -47,7 +47,10 @@
         /// <returns>An array of  <see cref="PowerTrade"/>`s. with the UTC time <see cref="PowerTrade.Create(DateTime, int)"/></returns>
         public async Task<IEnumerable<PowerTrade>> GetTradesAsync(DateTime date, TimeZoneInfo timeZoneInfo)
         {
-            CheckThrowError();
+            if (_mode == PowerServiceMode.Normal | _mode == PowerServiceMode.Error)
+            {
+                CheckThrowError();
+            }
             await Task.Delay(GetDelay());
             return GetTradesImpl(date, timeZoneInfo);
         }

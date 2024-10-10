@@ -10,6 +10,14 @@ namespace PowerTrades.Tests
     [TestClass]
     public class Integration
     {
+
+        [TestMethod]
+        [ExpectedException(typeof(ArgumentNullException))]
+        public async Task Given_Program_WhenBuild_ReturnsException()
+        {
+            var result = Program.Main(null);
+        }
+
         [TestMethod]
         public async Task Given_App_WhenExceuteHelp_Resturns_ConsoleStdOut()
         {
@@ -85,7 +93,6 @@ namespace PowerTrades.Tests
             Assert.AreEqual(expected, result.Build());
         }
 
-
         [TestMethod]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public async Task Given_FileConvention_WithInvalidVolumeDate_Fails()
@@ -119,6 +126,15 @@ namespace PowerTrades.Tests
             Assert.AreEqual("Volume", result.HeaderRecord?.Last());
         }
 
+        [TestMethod]
+        [ExpectedException(typeof(NullReferenceException))]
+        public void Given_PowerTradeCsv_WhenBuild_ReturnsException()
+        {
+            var result = TestHelper.GetRequiredService<PowerTradeCsvBuilder>()
+                .WithWorkingDirectory(null)
+                .WithFilename(null)
+                .Build(null);
+        }
 
         //Semicolon is the separator
         //The first row is the header.
@@ -145,7 +161,7 @@ namespace PowerTrades.Tests
             Assert.IsTrue(volume.Contains('.') && !volume.Contains(','));
         }
 
-        //The actual interval X is passed on the command line 
+        //The actual interval X is passed on the command line
         [TestMethod]
         public void Given_App_WithIOption_Accepts_IntervalArg()
         {
@@ -179,7 +195,6 @@ namespace PowerTrades.Tests
             Assert.AreEqual("00:01:00", expected);
             Assert.IsTrue(result.Contains(expected), $"Expected contains {expected} but got {result}");
         }
-
 
         //All trade positions shall be aggregated per hour (local/wall clock time)
         [TestMethod]
@@ -221,7 +236,6 @@ namespace PowerTrades.Tests
             Assert.IsNotNull(result);
             Assert.IsNotNull(result.ElementAt(24));
         }
-
 
         [TestMethod]
         public void Given_App_WhenExecute_Generates_CSV_AndRunsTimeHostedService()

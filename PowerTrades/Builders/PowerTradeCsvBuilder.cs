@@ -2,7 +2,6 @@
 using CsvHelper.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Globalization;
-using System.Linq.Expressions;
 
 namespace PowerTrades.Builders
 {
@@ -27,15 +26,6 @@ namespace PowerTrades.Builders
                 //dateTimeMap.TypeConverterOption.Format("yyyy-MM-ddTHH:mm:ssZ");
                 dateTimeMap.TypeConverterOption.CultureInfo(CultureInfo.InvariantCulture);
                 var volumeMap = Map(x => x.Volume).Name("Volume").NameIndex(1);
-            }
-
-            Expression<Func<T>> ToExpression<T>(Func<T> call)
-            {
-                MethodCallExpression methodCall = call.Target == null
-                    ? Expression.Call(call.Method)
-                    : Expression.Call(Expression.Constant(call.Target), call.Method);
-
-                return Expression.Lambda<Func<T>>(methodCall);
             }
         }
 

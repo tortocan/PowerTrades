@@ -10,7 +10,7 @@ namespace PowerTrades
         private Timer timer;
         private CancellationToken cancellationToken;
         private TimeSpan interval;
-        private TimeSpan dueTime;
+        private TimeSpan dueTime = TimeSpan.Zero;
         private Action job;
 
         public TimedHostedService(ILogger<TimedHostedService> logger)
@@ -21,12 +21,6 @@ namespace PowerTrades
         public TimedHostedService WithInterval(TimeSpan interval)
         {
             this.interval = interval;
-            return this;
-        }
-
-        public TimedHostedService WithDueTime(TimeSpan dueTime)
-        {
-            this.dueTime = dueTime;
             return this;
         }
 

@@ -3,8 +3,6 @@ namespace PowerService.Tests
     [TestClass]
     public class Integration
     {
-
-
         /// <summary>
         /// Net system dose not store TZ information with dates this needs to be stored in a persistance place or UTC dates to be used.
         /// As a result of that the ToLocalTime and ToUniversalTime can cause bugs even if best practices are applied more info can be found here <see href="https://learn.microsoft.com/en-us/previous-versions/dotnet/articles/ms973825(v=msdn.10)"/> about best parctices.
@@ -45,7 +43,6 @@ namespace PowerService.Tests
             Assert.IsTrue(istabulDate.IsDaylightSavingTime());
             Assert.IsTrue(bucharestDate.IsDaylightSavingTime());
 
-
             Assert.AreNotEqual(localDate, bucharestDate.ToLocalTime());//This "should" be equal
             Assert.AreNotEqual(utcTime, bucharestDate.ToUniversalTime());//This "should" be equal
             Assert.AreNotEqual(localDate, istabulDate.ToLocalTime());//This "should" be equal
@@ -54,18 +51,15 @@ namespace PowerService.Tests
             Assert.AreNotEqual(TimeZoneInfo.ConvertTime(localDate, utcTz), TimeZoneInfo.ConvertTime(istabulDate, utcTz));//This "should be equal
             Assert.AreNotEqual(bucharestDate, TimeZoneInfo.ConvertTime(istabulDate, istabulTz));//This "should be equal
 
-
             Assert.AreEqual(localDate, TimeZoneInfo.ConvertTimeToUtc(bucharestDate, bucharestTz).ToLocalTime());//Correct
             Assert.AreEqual(utcTime, TimeZoneInfo.ConvertTimeToUtc(bucharestDate, bucharestTz));//Correct
 
             Assert.AreEqual(localDate, TimeZoneInfo.ConvertTimeToUtc(istabulDate, istabulTz).ToLocalTime());//Correct
             Assert.AreEqual(utcTime, TimeZoneInfo.ConvertTimeToUtc(istabulDate, istabulTz));//Correct
 
-
             Assert.AreEqual(TimeZoneInfo.ConvertTime(bucharestDate, bucharestTz), TimeZoneInfo.ConvertTime(istabulDate, istabulTz));//Correct
             Assert.AreEqual(TimeZoneInfo.ConvertTime(bucharestDate, bucharestTz).ToUniversalTime(), TimeZoneInfo.ConvertTime(istabulDate, istabulTz).ToUniversalTime());//Correct
         }
-
 
         [TestMethod]
         public void Given_LocalDate_When_GetTrades_Returns_24PeriodsPerTrade_For_NextDay()
@@ -101,7 +95,6 @@ namespace PowerService.Tests
             var utcTz = TimeZoneInfo.FindSystemTimeZoneById(utdTimezonId);
             var istabulTz = TimeZoneInfo.FindSystemTimeZoneById(istabulTimezoneId);
 
-
             var istabulDate = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istabulTz);
 
             var today = istabulDate;
@@ -119,7 +112,28 @@ namespace PowerService.Tests
             }
         }
 
+        [TestMethod]
+        public async Task Given_Date_When_GetTradesAsync_Returns_Results()
+        {
+            Environment.SetEnvironmentVariable(PowerService.SERVICE_MODE_ENV_VAR_NAME, PowerServiceMode.Test.ToString());
+            var sut = new PowerService();
 
+            var utcTime = new DateTime(2024, 10, 6, 0, 0, 0, DateTimeKind.Utc);
+            TimeZoneInfo.TryConvertIanaIdToWindowsId("Europe/Istanbul", out string? istabulTimezoneId);
+            TimeZoneInfo.TryConvertIanaIdToWindowsId("UTC", out string? utdTimezonId);
+
+            var utcTz = TimeZoneInfo.FindSystemTimeZoneById(utdTimezonId);
+            var istabulTz = TimeZoneInfo.FindSystemTimeZoneById(istabulTimezoneId);
+
+            var istabulDate = TimeZoneInfo.ConvertTimeFromUtc(utcTime, istabulTz);
+
+            var today = istabulDate;
+            var nextDay = today.AddDays(1);
+            var dayHours = (nextDay - today).TotalHours;
+            var result = await sut.GetTradesAsync(nextDay, istabulTz);
+
+            Assert.IsNotNull(result);
+        }
 
         [TestMethod]
         public void Given_UTCDate_When_GetTrades_Returns_24PeriodsPerTrade_For_NextDay()
@@ -131,8 +145,6 @@ namespace PowerService.Tests
             TimeZoneInfo.TryConvertIanaIdToWindowsId("UTC", out string? utdTimezonId);
 
             var utcTz = TimeZoneInfo.FindSystemTimeZoneById(utdTimezonId);
-
-
 
             var today = utcTime;
             var nextDay = today.AddDays(1);
@@ -148,7 +160,6 @@ namespace PowerService.Tests
                 Assert.AreEqual(nextDay, trade.Date, "The report should be for the next day");
             }
         }
-
 
         [TestMethod]
         public void Given_Date_When_GetTrades_WithTestConfig_Returns2Results()
